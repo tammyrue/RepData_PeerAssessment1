@@ -1,25 +1,77 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Assignment COURSE PROJECT 1"
+author: "Tamara Rueda"
+date: "19 de marzo de 2018"
+output: html_document
 ---
+1.- Code to reading in the dataset
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ACTIVITY <- read.csv("activity.csv", header = TRUE, sep = ",")
+##A data.frame without NA큦
+ACTIVITY <- na.omit(ACTIVITY)
+```
+2.- histogram of the total number of steps taken each day
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+hist(ACTIVITY$steps, main = "Total Number of Steps", breaks = "sturges", xlab = "Steps", col = c("red", "blue", "green", "darkblue", "yellow"))
+```
+3.- Mean and Median number of steps taken each day
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+steps <- with(ACTIVITY, tapply(steps, date, sum))
+summary(steps)
+```
+4.- Time series plot of the average number of steps taken
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+SubsActivity <- subset.data.frame(ACTIVITY, select = steps:date)
+date <- SubsActivity$date
+library(lubridate)
+library(plotly)
+day_activity <- day(SubsActivity$date)
+SubActiv.grp.day <- group_by(SubsActivity, date) # column name to group by which is date
+library(dplyr)
+p<- summarize(SubActiv.grp.day, mean(steps))
+p <- as.data.frame(p)
+colnames(p) <- c("day", "steps")
+##We are plotting the daily averaged number of steps. day number of the month is "Day"
+```
+```{r Daily Aver Steps Plot, echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+g <-with(p, plot(steps, type = "l", main = "Daily Average Steps", col = "dark blue", lwd = 3.5))
+```
+5.-The 5-minute interval that, on average, contains the maximum number of steps
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+dailymeans <- with(ACTIVITY, tapply(steps, interval, mean))
+dailymeans[which(dailymeans == max(dailymeans))]##to find max value of steps and which interval is
+```
+6.-Code to describe and show a strategy for imputing missing data
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+#read again the file now with the NA큦 
+dat <- read.csv("activity.csv", head = TRUE, sep = ",", na.strings = "")
+#now NA큦 are replaced with the mean value
+dat$steps <- ifelse(is.na(dat$steps), mean(dat$steps, na.rm=TRUE), dat$steps)
+head(dat)
+```
+7.- Histogram of the total number of steps taken each day after missing values are imputed
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+hist(dat$steps, breaks = 5, main = paste("Hist.steps, mean instead of NA큦"), freq = TRUE, col = c("red", "blue", "yellow", "green", "brown", "purple"))
+```
+8.- Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=TRUE}
+library(plyr)
+#mutate to modify a data.frame adding or replacing columns
+#weekdays function will add a column with corresponding weekdays in spanish in my case
+ACTIVITY$date <- as.Date(ACTIVITY$date)
+activmod <- mutate(ACTIVITY, day = weekdays(ACTIVITY$date))
+weekend <- c("sabado", "domingo")#beware spanish weekend days
+weekday <- c("lunes", "martes", "miercoles", "jueves", "viernes")
+activmod$day <- weekdays.Date(activmod$date)#columna day contiene dia de la semana
+wkds <- subset(activmod, day %in% weekday)
+weekdaymeans <- with(wkds, tapply(steps, interval, mean))
+##Now weekend Days
+weekends <- subset(activmod, day %in% weekend)
+weekendsDayMeans <- with(wkds, tapply(steps, interval, mean))
+
+par(mfrow = c(1,2))
+plot(weekdaymeans, type = "l", col = "dark blue", main = "Aver Steps Weekdays", xlim=c(0,300), ylim=c(0,300))
+plot(weekendsDayMeans, type = "l", col = "green", main = "Aver Steps Weekends", xlim=c(0,300), ylim=c(0,300))
 
 
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+```
